@@ -16,7 +16,6 @@
 
 # Import required libraries
 import argparse
-import queue
 import requests
 import sys
 import threading
@@ -42,46 +41,21 @@ class Fuzzer:
 			self.base += "/"
 
 
-	# Define the method to return a queue of names
-	def make_queue(self):
-		# Create a boolean to check if resume point is found
-		found = False
-		# Create a queue to store the dirs
-		word_queue = queue.Queue()
-		
-		# Iterate over the directories
-		for word in self.dirs:
-			# Execute block if the resume point is not none
-			if self.resume is not None:
-				# If the resume point is found, add the word to the queue
-				if found:
-					word_queue.put(word)
-				# Else if the word to resume from is the same as the current word,
-				# set resume point to true and inform the user
-				else:
-					if self.resume == word:
-						found = True
-						print(f"Resuming from {self.resume}")
-			# If no resume word is set, add the current word to the queue
-			else:
-				word_queue.put(word)
-
-		# Return the queue
-		return word_queue
-
-
 	# Define the method to bruteforce the dir discovery
-	def brute(self, word_queue):
-		# Execute the following block till the supplied queue is not empty
-		while not word_queue.empty():
+	def brute(self):
+		# Execute the following block till the list of names is not empty
+		while len(self.dirs):
 			# Get the item at the front of the queue and create a list to brute it
-			testdir = word_queue.get()
+			testdir = self.dirs[0]
+			self.dirs.remove(testdir)
 			testlist = list()
 
-			# Append the item as a dir and as a file (using the extensions provided)
-			testlist.append(f"{testdir}/")
-			for ext in self.extensions:
-				testlist.append(f"{testdir}.{ext}")
+			# Test hidden files like (.htaccess and .htpasswd) without any extensions
+			if testdir[0] != ".":
+				# Append the item as a dir and as a file (using the extensions provided)
+				testlist.append(f"{testdir}/")
+				for ext in self.extensions:
+					testlist.append(f"{testdir}.{ext}")
 
 			# Attempt all items from the new list
 			for attempt in testlist:
@@ -110,13 +84,10 @@ class Fuzzer:
 
 	# Define the start point for all objects of the class
 	def run(self):
-		# Create a word queue
-		word_queue = self.make_queue()
-
 		# Spawn threads and start bruteforce discovery of dirs and files
 		# Number of threads specified using the -t flag (if not present, default = 10)
 		for _ in range(self.threads):
-			new_thread = threading.Thread(target=self.brute,args=(word_queue,))
+			new_thread = threading.Thread(target=self.brute,args=())
 			new_thread.start()
 		
 
