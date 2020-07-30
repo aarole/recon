@@ -18,8 +18,8 @@ import argparse
 import nmap
 import os
 import pyfuzz
-import subprocess
 import sys
+import threading
 
 
 class Machine:
@@ -64,12 +64,15 @@ class Machine:
 								outfile.write(f"{test_var[key]}")
 				outfile.write("\n\n")
 
-		if scanner[self.ip].has_tcp(80):
-			self.fuzz_web_server()
+		web_ports = [80, 443, 8080, 8443]
+
+		for port in web_ports:
+			if scanner[self.ip].has_tcp(port):
+				threading.Thread(target=self.fuzz_web_server, args=(port,)).start()
 
 	
-	def fuzz_web_server(self):
-		url = f"http://{self.ip}/"
+	def fuzz_web_server(self, port):
+		url = f"http://{self.ip}:{port}/"
 		
 		names = list()
 		# Open the wordlist file
