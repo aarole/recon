@@ -20,6 +20,7 @@ import os
 import pyfuzz
 import sys
 import threading
+import time
 
 
 class Machine:
@@ -46,7 +47,7 @@ class Machine:
 
 		base_dict = scanner._scan_result['scan'][self.ip]['tcp']
 
-		with open(f"{self.name}.nmapout", "w") as outfile:
+		with open(f"{self.name}.nmap{str(upper_bound)}", "w") as outfile:
 			for port in base_dict.keys():
 				outfile.write(f"Port: {port}\n")
 				for detail in base_dict[port].keys():
@@ -67,7 +68,8 @@ class Machine:
 		web_ports = [80, 443, 8080, 8443]
 
 		for port in web_ports:
-			if scanner[self.ip].has_tcp(port):
+			if port <= upper_bound and scanner[self.ip].has_tcp(port):
+				web_ports.remove(port)
 				threading.Thread(target=self.fuzz_web_server, args=(port,)).start()
 
 	
@@ -121,7 +123,9 @@ def define_args():
 def main():
 	args = define_args()
 
-	Machine(args.ip, args.name, args.wd)
+	machine = Machine(args.ip, args.name, args.wd)
+	time.sleep(300)
+	machine.port_scan(10000)
 
 
 if __name__ == "__main__":
