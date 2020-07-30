@@ -33,9 +33,6 @@ class Fuzzer:
 		self.dirs = dirs
 		self.threads = threads
 
-		# Set the wordlist resume point to None
-		self.resume = None
-
 		# Append a / to the base URL if not provided
 		if self.base[-1] != "/":
 			self.base += "/"
